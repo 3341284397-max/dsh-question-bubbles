@@ -17,6 +17,16 @@ A bundle for [DeepSeek Harness](https://github.com/deepseek-ai) desktop. The hos
 
 ---
 
+## Screenshots
+
+| Dark | Light |
+| --- | --- |
+| ![Two question bubbles floating above the whale in dark theme](docs/dark.png) | ![A bubble with the "proceeded" state and a close button in light theme](docs/light.png) |
+
+A leading `✦` marks a question the model labelled itself through the marker protocol; bubbles without one were caught by the regex fallback.
+
+---
+
 ## Requirements
 
 - **DeepSeek Harness desktop** — this is a DSH bundle, not a standalone app.
