@@ -13,6 +13,13 @@ A plugin for [DeepSeek Harness](https://github.com/deepseek-ai) desktop. The hos
 
 ---
 
+## Requirements · 前置依赖
+
+- **DeepSeek Harness desktop** — this is a DSH bundle, not a standalone app.
+- **Balance Whale Widget** — [`dsh-whale-widget`](https://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget). Currently the UI depends on it: bubbles anchor above the whale, and the panel opens with a middle-click on the whale. Without it only the corner 💭 knob works, and bubbles have no anchor to float over.
+
+---
+
 ## Install · 安装
 
 This is a local DSH bundle (no build step). Three steps:
@@ -115,3 +122,7 @@ Runs the whole host path with a fake root/ctx (no DSH needed): injection row →
 ## License
 
 MIT © 2026 Lyrins
+
+## Credits · 致谢
+
+Bubble positioning, the whale anchor and the panel entry point are built around [Balance Whale Widget](https://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget) by MeteorNOX. This project only reads its DOM (`.dshwv-root`) and listens for a middle-click; it does not modify the widget.
