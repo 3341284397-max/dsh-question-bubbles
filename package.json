@@ -1,0 +1,24 @@
+{
+  "name": "dsh-question-bubbles",
+  "version": "0.2.0",
+  "description": "问题泡泡：在思考流里捕捉模型没问出口的疑问，以气泡浮在鲸鱼挂件上方，可当场作答并温和排队注入；支持中/英/日/韩/俄多语种识别。",
+  "type": "module",
+  "main": "lib/index.js",
+  "files": [
+    "lib",
+    "assets",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "license": "MIT"
+}

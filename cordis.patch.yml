@@ -1,0 +1,5 @@
+# dsh-question-bubbles —— DSH bundle patch
+# 只声明「装到配置树上」，具体行为由 lib/index.js 实现。
+- insert:
+    - id: dsh-question-bubbles
+      name: dsh-question-bubbles
