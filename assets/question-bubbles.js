@@ -50,6 +50,8 @@
     '.dsh-qb-b.done{opacity:.62;}',
     '.dsh-qb-b.out{opacity:0;transform:translateY(6px) scale(.96);}',
     '.dsh-qb-b.proceeded{border-color:var(--qb-line);}',
+    '.dsh-qb-b.solved{opacity:.55;border-style:dashed;}',
+    '.dsh-qb-org{display:inline-block;margin-right:5px;font-size:10px;color:var(--qb-accent);vertical-align:1px;}',
     '.dsh-qb-e{pointer-events:auto;cursor:default;}',
     '.dsh-qb-e textarea{display:block;width:260px;max-width:64vw;min-height:44px;max-height:140px;resize:vertical;margin:2px 0 0;padding:6px 8px;border-radius:9px;border:1px solid var(--qb-line-2);background:var(--qb-input);color:var(--qb-fg);font:inherit;outline:none;box-sizing:border-box;}',
     '.dsh-qb-e textarea:focus{border-color:var(--qb-accent);}',
@@ -110,6 +112,7 @@
       bubbleClose: '关掉这条',
       bAnswered: '已答 · 排进下一轮',
       bProceeded: '已自行推进 · 仍可回答',
+    bSolved: '已自解 · 自己往下走了',
       bHint: '点一下回答 · 右键看全文',
       ph: '回答这个疑问（会排进下一轮，不打断当前这步）',
       send: '发过去',
@@ -141,6 +144,7 @@
       bubbleClose: 'Dismiss',
       bAnswered: 'Answered · next round',
       bProceeded: 'Moved on · still answerable',
+    bSolved: 'Resolved itself',
       bHint: 'Click to answer · right-click for full text',
       ph: 'Your answer (queued for the next round, will not interrupt this step)',
       send: 'Send',
@@ -172,6 +176,7 @@
       bubbleClose: '閉じる',
       bAnswered: '回答済み · 次のラウンド',
       bProceeded: '独断で進行 · 回答可',
+    bSolved: '自分で解決済み',
       bHint: 'クリックで回答 · 右クリックで全文',
       ph: '回答を入力（次のラウンドに回します。今の作業は止めません）',
       send: '送信',
@@ -203,6 +208,7 @@
       bubbleClose: '닫기',
       bAnswered: '답변함 · 다음 라운드',
       bProceeded: '스스로 진행 · 답변 가능',
+    bSolved: '스스로 해결함',
       bHint: '클릭해 답변 · 우클릭으로 전체 보기',
       ph: '답변 입력(다음 라운드로 넘어갑니다. 지금 단계는 멈추지 않습니다)',
       send: '보내기',
@@ -234,6 +240,7 @@
       bubbleClose: 'Закрыть',
       bAnswered: 'Отвечено · следующий раунд',
       bProceeded: 'Решил сам · можно ответить',
+    bSolved: 'Решил сам',
       bHint: 'Клик — ответить · правый клик — весь текст',
       ph: 'Ваш ответ (уйдёт в следующий раунд, не прерывая текущий шаг)',
       send: 'Отправить',
@@ -563,7 +570,7 @@
         var it = find(data.id)
         if (it) {
           it.status = data.status
-          if (data.status === 'answered') it.answeredAt = Date.now()
+          if (data.status === 'answered' || data.status === 'solved') it.answeredAt = Date.now()
           paint(it)
         }
         return
@@ -645,6 +652,7 @@
       id: q.id,
       text: String(q.text).replace(/^[\s\-–—]*(?:ask|question|q|疑问|问题|问)\s*[:：]\s*/i, ''),
       status: q.status || 'open',
+      origin: q.origin || 'auto',
       createdAt: Number(q.ts) || Date.now(),
       el: null,
       hover: false,
@@ -671,7 +679,14 @@
 
     var t = document.createElement('div')
     t.className = 'dsh-qb-t'
-    t.textContent = item.text
+    if (item.origin === 'marker') {
+      var badge = document.createElement('span')
+      badge.className = 'dsh-qb-org'
+      badge.textContent = '✦'
+      badge.title = 'model-marked · 模型自己标出的疑问'
+      t.appendChild(badge)
+    }
+    t.appendChild(document.createTextNode(item.text))
 
     var f = document.createElement('div')
     f.className = 'dsh-qb-f'
@@ -726,6 +741,7 @@
     var f = item.el.querySelector('.dsh-qb-f')
     if (!f) return
     if (item.status === 'answered') f.textContent = tr('bAnswered')
+    else if (item.status === 'solved') f.textContent = tr('bSolved')
     else if (item.status === 'proceeded') f.textContent = tr('bProceeded')
     else f.textContent = tr('bHint')
   }
@@ -734,6 +750,7 @@
     if (!item.el) return
     item.el.classList.toggle('proceeded', item.status === 'proceeded')
     item.el.classList.toggle('done', item.status === 'answered')
+    item.el.classList.toggle('solved', item.status === 'solved')
     updateFoot(item)
   }
 
@@ -742,7 +759,7 @@
     var open = []
     for (var i = state.items.length - 1; i >= 0 && open.length < state.maxBubbles; i--) {
       var it = state.items[i]
-      if (it.status === 'expired' || it.status === 'answered') continue
+      if (it.status === 'expired' || it.status === 'answered' || it.status === 'solved') continue
       open.push(it)
     }
     open.reverse()
@@ -752,7 +769,7 @@
       var x = state.items[j]
       if (!x.el || open.indexOf(x) !== -1) continue
       if (x.el.classList.contains('out')) continue
-      if (x.status === 'answered' && Date.now() - (x.answeredAt || 0) < 2500) continue
+      if ((x.status === 'answered' || x.status === 'solved') && Date.now() - (x.answeredAt || 0) < 2500) continue
       if (x.el.querySelector('.dsh-qb-e')) continue
       fadeOut(x)
     }

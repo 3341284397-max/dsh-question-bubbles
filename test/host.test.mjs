@@ -18,6 +18,7 @@ const handlers = new Map()
 const routes = new Map()
 const effects = []
 const promptCalls = []
+const sectionCalls = []
 let injectTable = null
 
 const fakeCtx = {
@@ -26,6 +27,15 @@ const fakeCtx = {
       routes.set(route.path, route)
       return () => routes.delete(route.path)
     },
+  },
+  systemPrompt: {
+    section(sec) {
+      sectionCalls.push(sec)
+      return () => {}
+    },
+  },
+  effect(fn) {
+    return fn()
   },
   get(name) {
     if (name === 'sessionController') {
@@ -284,6 +294,37 @@ await routes.get('/dsh-qb/state').handler(makeReq({ host: '127.0.0.1:50498' }), 
 const st3 = JSON.parse(stRes3.body)
 assert.ok(st3.questions.some((q) => q.text === '测试泡泡'), 'demo 应产生一条疑问')
 console.log('✓ demo 路由 OK')
+
+// 11) 提示词标记协议：模型自己写 ⟦问⟧ / ⟦答⟧
+assert.equal(sectionCalls.length, 1, '应注册 1 段 system prompt')
+assert.equal(sectionCalls[0].name, 'dsh-question-bubbles')
+assert.ok(sectionCalls[0].text.includes('⟦问⟧'), '协议正文应含提问标记样例')
+
+const parsed = __test.extractMarkers('嗯，⟦问⟧该先做标记协议还是先打磨界面⟦/问⟧ 然后…⟦答⟧先做标记协议⟦/答⟧')
+assert.equal(parsed.questions.length, 1, '应抽出 1 个问题标记')
+assert.equal(parsed.answers.length, 1, '应抽出 1 个回答标记')
+assert.equal(parsed.questions[0], '该先做标记协议还是先打磨界面')
+
+emit({ type: 'start', attemptId: 'att-mark', revision: 1, turn: 1, step: 1 }, 'sess-mark')
+// 故意把标记拆成两半，验证跨 delta 拼接
+emit({ type: 'chunk', attemptId: 'att-mark', revision: 1, index: 0, time: 0, chunk: { type: 'reasoning-delta', index: 0, text: '嗯我有点纠结 ⟦问⟧这个开关' } }, 'sess-mark')
+emit({ type: 'chunk', attemptId: 'att-mark', revision: 1, index: 0, time: 0, chunk: { type: 'reasoning-delta', index: 0, text: '放哪比较自然⟦/问⟧ 继续' } }, 'sess-mark')
+
+const stMark = makeRes()
+await routes.get('/dsh-qb/state').handler(makeReq({ host: '127.0.0.1:50498' }), stMark)
+const mk = JSON.parse(stMark.body).questions.filter((q) => q.sessionId === 'sess-mark')
+assert.equal(mk.length, 1, '跨 delta 的标记应合成一条：' + mk.length)
+assert.equal(mk[0].origin, 'marker', '应标记 origin=marker')
+assert.equal(mk[0].status, 'open')
+
+// 模型自己补 ⟦答⟧ → 该条转 solved
+emit({ type: 'chunk', attemptId: 'att-mark', revision: 1, index: 0, time: 0, chunk: { type: 'reasoning-delta', index: 0, text: '⟦答⟧放鲸鱼上方吧⟦/答⟧' } }, 'sess-mark')
+const stMark2 = makeRes()
+await routes.get('/dsh-qb/state').handler(makeReq({ host: '127.0.0.1:50498' }), stMark2)
+const mk2 = JSON.parse(stMark2.body).questions.filter((q) => q.sessionId === 'sess-mark')
+assert.equal(mk2[0].status, 'solved', '写了答案标记后应转 solved')
+assert.equal(mk2[0].note, '放鲸鱼上方吧')
+console.log('✓ 提示词标记协议 OK（拆包拼接 / 自解 / 协议正文）')
 
 console.log('\n全部通过。')
 process.exit(0)
