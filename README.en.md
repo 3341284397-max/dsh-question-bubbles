@@ -36,7 +36,15 @@ A leading `✦` marks a question the model labelled itself through the marker pr
 
 ## Install
 
-Local bundle, no build step:
+From npm (recommended):
+
+```sh
+dsh plugin --profile desktop add dsh-question-bubbles
+```
+
+Restart DSH afterwards. The host half is read at startup only; the client script hot-reloads on refresh.
+
+To work from a checkout, mount it directly — there is no build step:
 
 1. Put the folder under your profile:
 
@@ -55,7 +63,7 @@ Local bundle, no build step:
    }
    ```
 
-3. Restart DSH. The host half is read at startup only; the client script hot-reloads on refresh.
+3. Restart DSH.
 
 The bundle self-declares via `package.json` → `dsh.bundle.patch` → `cordis.patch.yml`.
 

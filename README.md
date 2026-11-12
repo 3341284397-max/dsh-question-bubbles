@@ -35,7 +35,15 @@
 
 ## 安装
 
-纯本地 bundle，无构建步骤：
+从 npm 安装（推荐）：
+
+```sh
+dsh plugin --profile desktop add dsh-question-bubbles
+```
+
+装完重启 DSH。Host 半只在启动时读取；客户端脚本刷新页面即可热更新。
+
+本地开发时也可以直接从源码挂载，无构建步骤：
 
 1. 把目录放到 profile 下：
 
@@ -54,7 +62,7 @@
    }
    ```
 
-3. 重启 DSH。Host 半只在启动时读取；客户端脚本刷新页面即可热更新。
+3. 重启 DSH。
 
 bundle 通过 `package.json` → `dsh.bundle.patch` → `cordis.patch.yml` 自我声明。
 
